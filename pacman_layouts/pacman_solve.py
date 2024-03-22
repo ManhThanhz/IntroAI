@@ -1,3 +1,5 @@
+import heapq
+
 class State:
     def __init__(self, pacman_position, food_points, parent_state=None, parent_action=None, cost=0):
         self.pacman_position = pacman_position
@@ -41,8 +43,19 @@ class Maze:
                     food_points.append((i, j))
 
         return State(pacman_position, food_points)
-
-import heapq
+    
+    def print_maze(self, pacman_position, food_positions):
+        for i in range(self.rows):
+            for j in range(self.cols):
+                if (i, j) == pacman_position:
+                    print('P', end='')
+                elif (i, j) in food_positions:
+                    print('.', end='')
+                elif self.layout[i][j] == 'P' or self.layout[i][j] == '.':
+                    print(' ', end='')
+                else:
+                    print(self.layout[i][j], end='')  # Print original maze layout
+            print()
 
 class UCS:  
     def __init__(self, maze):
@@ -172,17 +185,27 @@ import time
 '''
 print the steps to achieve the goal, such as: north, north, south, west, east, east
 '''
-def visualize(maze, actions):
+def visualize(search_algorithm, actions):
     if not actions:
         print("No solution found.")
         return
 
-    current_state = maze.get_initial_state()
+    current_state = search_algorithm.maze.get_initial_state()
     for action in actions:
-        print(action)
-        if current_state.parent_state is not None:  # Add this condition
-            current_state = current_state.parent_state
-
+        os.system('cls' if os.name == 'nt' else 'clear')  # Clear terminal
+        search_algorithm.maze.print_maze(current_state.pacman_position, current_state.food_points)
+        # print(f"Action: {action}")
+        # Update current_state based on action
+        for dx, dy, action_name in [(0, 1, 'East'), (0, -1, 'West'), (1, 0, 'South'), (-1, 0, 'North'), (0, 0, 'Stop')]:
+            if action_name == action:
+                new_x, new_y = current_state.pacman_position[0] + dx, current_state.pacman_position[1] + dy
+                if search_algorithm.is_valid_position(new_x, new_y):
+                    current_state = State((new_x, new_y), [point for point in current_state.food_points if point != (new_x, new_y)], current_state, action, current_state.cost + 1)
+                    break
+        time.sleep(0.001)  # Pause for 0.5 seconds
+    os.system('cls' if os.name == 'nt' else 'clear')  # Clear terminal
+    # search_algorithm.maze.print_maze(current_state.pacman_position, current_state.food_points)
+    print(", ".join(actions))
     print("Goal reached.")
 
 def print_maze(maze, action):
@@ -231,10 +254,10 @@ def main(layout_file, algorithm):
         return
 
     actions, total_cost = search_algorithm.search(initial_state)
-    visualize(maze, actions)
+    visualize(search_algorithm, actions)
     print("Total cost:", total_cost)
 
 if __name__ == "__main__":
-    layout_file = "D:\\UniBachelor\\232\\AI\\BTL1\\pacman_layouts\\pacman_layouts\\bigMaze.lay"
+    layout_file = "D:\\1UniBachelor\\232\\AI\\BTL1\\pacman_layouts\\pacman_layouts\\smallMaze.lay"
     algorithm = "A*"  # or "UCS"
     main(layout_file, algorithm)
