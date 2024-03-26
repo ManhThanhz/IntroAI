@@ -1,38 +1,35 @@
 from graphviz import Digraph
 from heapq import heappop, heappush
-from graph import Node
-import time
+from node import Node
 
 
 class SearchStrategy:
-  def __init__(self) -> None:
-     self.i = 0
   
   def search(self, node: Node) -> tuple:
     return (0,0)
   
   def check_goal(self, state: Node):
-    goal1 = [[1, 2, 3],[4, 5, 6],[7, 8, 0]]
-    goal2 = [[0, 1, 2],[3, 4, 5],[6, 7, 8]]
-    if str(state) == str(Node(goal1)) or str(state) == str(Node(goal2)):
+    state_str = state.get_node_str()
+    goal1 = Node([[1, 2, 3],[4, 5, 6],[7, 8, 0]])
+    goal2 = Node([[0, 1, 2],[3, 4, 5],[6, 7, 8]])
+    if (state_str == goal1.get_node_str()) or (state_str == goal2.get_node_str()):
       return True
     return False
 
+
   def find_cost_and_path(self, current_state: Node, initial_state: Node):
     if current_state.parent == initial_state:
-      print(current_state.action)
-      return 1, current_state.action
+      return 1, [current_state.action]
     else:
-      extra_cost, extra_path = self.find_cost_and_path(current_state.parent, initial_state)
-      cost = extra_cost + 1
-      path = extra_path + current_state.action
-      print(current_state.action)
+      cost, path = self.find_cost_and_path(current_state.parent, initial_state)
+      cost += 1
+      path.append(current_state.action)
       return cost, path
 
 
 
 class BFS(SearchStrategy):
-  def search(self, node: Node) -> tuple[Digraph, int, list]:
+  def search(self, node: Node) -> tuple:
     dot = Digraph()
     frontier = list()
     explored = set()
@@ -40,22 +37,33 @@ class BFS(SearchStrategy):
 
     while len(frontier) > 0:
       if frontier[0] not in explored:
-        explored.add(str(frontier[0]))
-        successors = frontier[0].get_successors()
-        frontier.pop(0)
+
+        # Pop frontier
+        front_node = frontier.pop(0)
+
+        # Add to already explored node
+        explored.add(str(front_node))
+
+        # Get successor and start loop
+        successors = front_node.get_successors()
         for successor in successors:
-          if str(successor) not in explored:
-            self.i += 1
-            print(self.i)
 
-            frontier.append(successor)
-            explored.add(str(successor))
-            successor.draw(dot)
-            if self.check_goal(successor):
-              cost, path = self.find_cost_and_path(successor, node)
-              return dot, cost, path
+          # Skip already explored node
+          if str(successor) in explored:
+            continue
 
-    return dot, 0, []
+          # Add successor to frontier
+          frontier.append(successor)
+
+          # Draw graph
+          successor.draw(dot)
+
+          # Check goal and return if true
+          if self.check_goal(successor):
+            cost, path = self.find_cost_and_path(successor, node)
+            return dot, cost, path
+
+    return None, 0, []
 
 
   
@@ -84,10 +92,6 @@ class AStar(SearchStrategy):
         
         # Add current state to closed set
         explored.add(str(current_state))
-
-        # print("Current state:")
-        # print(current_state, "\n")
-        # time.sleep(2)
 
         # Get successors
         successors = current_state.get_successors()
