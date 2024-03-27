@@ -91,6 +91,20 @@ class SearchAlgorithm:
         cost = state.cost + 1
         return State(pacman_position, food_points, state, action, cost)
 
+    def get_successors(self, state):
+        successors = []
+        x, y = state.pacman_position
+
+        actions = [(0, 1, 'East'), (0, -1, 'West'), (1, 0, 'South'), (-1, 0, 'North'), (0, 0, 'Stop')]
+        for dx, dy, action in actions:
+            new_x, new_y = x + dx, y + dy
+            if self.is_valid_position(new_x, new_y):
+                next_state = self.get_next_state(state, (new_x, new_y), action)
+                step_cost = 1
+                successors.append((action, next_state, step_cost))
+
+        return successors
+
     def extract_actions(self, final_state):
         actions = []
         current_state = final_state
@@ -117,20 +131,6 @@ class UCS(SearchAlgorithm):
 
         return None, float('inf')
 
-    def get_successors(self, state):
-        successors = []
-        x, y = state.pacman_position
-
-        actions = [(0, 1, 'East'), (0, -1, 'West'), (1, 0, 'South'), (-1, 0, 'North'), (0, 0, 'Stop')]
-        for dx, dy, action in actions:
-            new_x, new_y = x + dx, y + dy
-            if self.is_valid_position(new_x, new_y):
-                next_state = self.get_next_state(state, (new_x, new_y), action)
-                step_cost = 1
-                successors.append((action, next_state, step_cost))
-
-        return successors
-
 class AStar(SearchAlgorithm):
     def __init__(self, maze, heuristic):
         super().__init__(maze)
@@ -153,53 +153,42 @@ class AStar(SearchAlgorithm):
                     heapq.heappush(frontier, (priority, new_cost, next_state))
 
         return None, float('inf')
+    
+    def manhattan_distance(point1, point2):
+        return abs(point1[0] - point2[0]) + abs(point1[1] - point2[1])
 
-    def is_goal_state(self, state):
-        return not state.food_points
+    def nearest_food_heuristic(self, state):
+        pacman_position = state.pacman_position
+        remaining_food_points = state.food_points
+        if not remaining_food_points:
+            return 0  
+        return min(self.manhattan_distance(pacman_position, food_point) for food_point in remaining_food_points)
 
-    def get_successors(self, state):
-        successors = []
-        x, y = state.pacman_position
+class Visualizer:
+    def __init__(self, search_algorithm):
+        self.search_algorithm = search_algorithm
 
-        actions = [(0, 1, 'East'), (0, -1, 'West'), (1, 0, 'South'), (-1, 0, 'North'), (0, 0, 'Stop')]
-        for dx, dy, action in actions:
-            new_x, new_y = x + dx, y + dy
-            if self.is_valid_position(new_x, new_y):
-                next_state = self.get_next_state(state, (new_x, new_y), action)
-                step_cost = 1
-                successors.append((action, next_state, step_cost))
+    def visualize(search_algorithm, actions):
+        if not actions:
+            print("No solution found.")
+            return
 
-        return successors
-
-def visualize(search_algorithm, actions):
-    if not actions:
-        print("No solution found.")
-        return
-
-    current_state = search_algorithm.maze.get_initial_state()
-    for action in actions:
+        current_state = search_algorithm.maze.get_initial_state()
+        for action in actions:
+            os.system('cls' if os.name == 'nt' else 'clear')  # Clear terminal
+            search_algorithm.maze.print_maze(current_state.pacman_position, current_state.food_points)
+            for dx, dy, action_name in [(0, 1, 'East'), (0, -1, 'West'), (1, 0, 'South'), (-1, 0, 'North'), (0, 0, 'Stop')]:
+                if action_name == action:
+                    new_x, new_y = current_state.pacman_position[0] + dx, current_state.pacman_position[1] + dy
+                    if search_algorithm.is_valid_position(new_x, new_y):
+                        current_state = State((new_x, new_y), [point for point in current_state.food_points if point != (new_x, new_y)], current_state, action, current_state.cost + 1)
+                        break
+            time.sleep(0.001)
         os.system('cls' if os.name == 'nt' else 'clear')  # Clear terminal
-        search_algorithm.maze.print_maze(current_state.pacman_position, current_state.food_points)
-        for dx, dy, action_name in [(0, 1, 'East'), (0, -1, 'West'), (1, 0, 'South'), (-1, 0, 'North'), (0, 0, 'Stop')]:
-            if action_name == action:
-                new_x, new_y = current_state.pacman_position[0] + dx, current_state.pacman_position[1] + dy
-                if search_algorithm.is_valid_position(new_x, new_y):
-                    current_state = State((new_x, new_y), [point for point in current_state.food_points if point != (new_x, new_y)], current_state, action, current_state.cost + 1)
-                    break
-        time.sleep(0.001)
-    os.system('cls' if os.name == 'nt' else 'clear')  # Clear terminal
-    print(", ".join(actions))
-    print("Goal reached.")
+        print(", ".join(actions))
+        print("Goal reached.")
 
-def manhattan_distance(point1, point2):
-    return abs(point1[0] - point2[0]) + abs(point1[1] - point2[1])
 
-def nearest_food_heuristic(state):
-    pacman_position = state.pacman_position
-    remaining_food_points = state.food_points
-    if not remaining_food_points:
-        return 0  
-    return min(manhattan_distance(pacman_position, food_point) for food_point in remaining_food_points)
 
 def main(layout_file, algorithm):
     maze = Maze(layout_file)
@@ -208,14 +197,14 @@ def main(layout_file, algorithm):
     if algorithm == 'UCS':
         search_algorithm = UCS(maze)
     elif algorithm == 'A*':
-        heuristic = nearest_food_heuristic
+        heuristic = AStar.nearest_food_heuristic
         search_algorithm = AStar(maze, heuristic)
     else:
         print("Invalid algorithm specified.")
         return
 
     actions, total_cost = search_algorithm.search(initial_state)
-    visualize(search_algorithm, actions)
+    Visualizer.visualize(search_algorithm, actions)
     print("Total cost:", total_cost)
 
 if __name__ == "__main__":
