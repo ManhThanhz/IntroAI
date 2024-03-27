@@ -60,6 +60,7 @@ class BFS(SearchStrategy):
 
           # Check goal and return if true
           if self.check_goal(successor):
+            print("BFS reach goal")
             cost, path = self.find_cost_and_path(successor, node)
             return dot, cost, path
 
@@ -86,7 +87,7 @@ class AStar(SearchStrategy):
 
         # Check if current state is goal state
         if self.check_goal(current_state):
-              print("reach goal")
+              print("A* reach goal")
               cost, path = self.find_cost_and_path(current_state, node)
               return dot, cost, path
         
