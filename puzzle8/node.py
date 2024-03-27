@@ -21,6 +21,9 @@ class Node:
   def __lt__(self, other):
       choice = random.choice([self, other])
       return choice
+  
+  # def __hash__(self):
+  #   return hash(self.id)
 
   def get_successors(self):
     successors = []

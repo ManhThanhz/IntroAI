@@ -17,52 +17,49 @@ class SearchStrategy:
     return False
 
 
-  def find_cost_and_path(self, current_state: Node, initial_state: Node):
+  def find_cost_and_path(self, current_state: Node, initial_state: Node, dot: Digraph()):
     if current_state.parent == initial_state:
-      return 1, [current_state.action]
+      current_state.draw(dot)
+      return dot, 1, [current_state.action]
     else:
-      cost, path = self.find_cost_and_path(current_state.parent, initial_state)
+      dot, cost, path = self.find_cost_and_path(current_state.parent, initial_state, dot)
       cost += 1
       path.append(current_state.action)
-      return cost, path
+      current_state.draw(dot)
+      return dot, cost, path
 
 
 
 class BFS(SearchStrategy):
   def search(self, node: Node) -> tuple:
-    dot = Digraph()
     frontier = list()
     explored = set()
     frontier.append(node)
 
     while len(frontier) > 0:
-      if frontier[0] not in explored:
 
-        # Pop frontier
-        front_node = frontier.pop(0)
+      # Pop frontier
+      front_node = frontier.pop(0)
 
-        # Add to already explored node
-        explored.add(str(front_node))
+      # Add to already explored node
+      explored.add(str(front_node))
 
-        # Get successor and start loop
-        successors = front_node.get_successors()
-        for successor in successors:
+      # Get successor and start loop
+      successors = front_node.get_successors()
 
-          # Skip already explored node
-          if str(successor) in explored:
-            continue
+      for successor in successors:
 
-          # Add successor to frontier
-          frontier.append(successor)
-
-          # Draw graph
-          successor.draw(dot)
+        # Skip already explored node
+        if str(successor) not in explored:
 
           # Check goal and return if true
           if self.check_goal(successor):
-            print("BFS reach goal")
-            cost, path = self.find_cost_and_path(successor, node)
+            dot = Digraph()
+            dot, cost, path = self.find_cost_and_path(successor, node, dot)
             return dot, cost, path
+        
+          # Add successor to frontier
+          frontier.append(successor)
 
     return None, 0, []
 
@@ -74,21 +71,17 @@ class AStar(SearchStrategy):
     frontier = []  # (priority, state, cost)
     heappush(frontier, (self.heuristics(node), node, 0))
     explored = set()
-    dot = Digraph()
 
     # A* search loop
     while len(frontier) > 0:
       _, current_state, cost = heappop(frontier)
 
-      if current_state not in explored:
-
-        # Add node to graph
-        current_state.draw(dot)
+      if str(current_state) not in explored:
 
         # Check if current state is goal state
         if self.check_goal(current_state):
-              print("A* reach goal")
-              cost, path = self.find_cost_and_path(current_state, node)
+              dot = Digraph()
+              dot, cost, path = self.find_cost_and_path(current_state, node, dot)
               return dot, cost, path
         
         # Add current state to closed set
@@ -105,10 +98,10 @@ class AStar(SearchStrategy):
                 heappush(frontier, (priority, successor, new_cost))
 
     # If no solution found
-    return dot, 0, []
+    return None, 0, []
 
 
-  def heuristics(self, node: Node): # Manhattan
+  def heuristics(self, node: Node): # Manhattan distance
     distance = 0
     state = node.state
     for i in range(3):
