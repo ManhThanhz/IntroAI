@@ -1,7 +1,7 @@
 from game import Game
 from test_program import TestProgram
 import matplotlib.pyplot as plt
-
+import time
 
 ###########
 # GREETING
@@ -36,25 +36,31 @@ if choice == "2":
     # Start program
     print("Program started...")
     test_program = TestProgram()
-    results = test_program.compare_algorithm(n, ["bfs","astar"])
+    game = Game()
+    node_arr = game.random_multi_initial_state(n)
 
-    # Get result for each algorithm
-    bfs_result = results["bfs"]
-    astar_result = results["astar"]
+    # Get result for BFS
+    bfs_start_timer = time.time()
+    bfs_result = test_program.test_algorithm(n, game, node_arr, "bfs")
+    bfs_end_timer = time.time()
+    print("Time take: ", round(bfs_end_timer - bfs_start_timer, 2), " seconds")
+
+    # Get result for A*
+    astar_start_timer = time.time()
+    astar_result = test_program.test_algorithm(n, game, node_arr, "astar")
+    astar_end_timer = time.time()
+    print("Time take: ", round(astar_end_timer - astar_start_timer, 2), " seconds")
 
     # Get AVERAGE cost
     bfs_average_cost = bfs_result.compute_average_cost()
     astar_average_cost = astar_result.compute_average_cost()
 
-    # Get HIGHEST cost
-    bfs_highest_cost = bfs_result.get_highest_cost()
-    astar_highest_cost = astar_result.get_highest_cost()
-    highest_cost = bfs_highest_cost if bfs_highest_cost > astar_highest_cost else astar_highest_cost
-
     # Plot graph
-    print(bfs_average_cost)
-    print(astar_average_cost)
-    plt.bar(["bfs","astar"], [bfs_average_cost, astar_average_cost], width=0.4)
+    algorithms = ["BFS","A*"]
+    average_costs = [bfs_average_cost, astar_average_cost]
+    plt.bar(algorithms, average_costs, width=0.4)
+    for i in range(len(algorithms)):
+        plt.text(i,average_costs[i],average_costs[i])
     plt.xlabel('Algorithm')
     plt.ylabel('Average cost')
     plt.show()

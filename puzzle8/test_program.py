@@ -1,9 +1,9 @@
 from game import Game
 
 class AlgorithmResult:
-    def __init__(self, n: int = 0, all_cost: list[int] = []) -> None:
-        self.n = n
-        self.all_cost = all_cost
+    def __init__(self) -> None:
+        self.n = 0
+        self.all_cost = []
 
     def add_case(self, cost: int):
         self.n += 1
@@ -21,8 +21,8 @@ class AlgorithmResult:
 class TestProgram:
     def test_algorithm(self, n, game, node_arr, algorithm) -> AlgorithmResult:
         print("\nTest for ", algorithm)
-        fail = 0
         result = AlgorithmResult()
+        fail = 0
         for node in node_arr:
             # print("State:\n", node)
             game.set_board(node)
@@ -32,14 +32,6 @@ class TestProgram:
                 result.add_case(cost)
             else:
                 fail += 1
-        print("Finish!\n")
+        print("Finish!")
         print("Success on ", n - fail, "/", n, " cases")
         return result
-    
-    def compare_algorithm(self, n: int = 10, algorithms: list[str] = ["bfs"]) -> dict[str, AlgorithmResult]:
-        results = dict()
-        game = Game()
-        node_arr = game.random_multi_initial_state(n)
-        for algorithm in algorithms:
-            results[algorithm] = self.test_algorithm(n, game, node_arr, algorithm)
-        return results
