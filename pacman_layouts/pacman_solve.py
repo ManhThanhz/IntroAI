@@ -179,7 +179,7 @@ class Visualizer:
                     if search_algorithm.is_valid_position(new_x, new_y):
                         current_state = State((new_x, new_y), [point for point in current_state.food_points if point != (new_x, new_y)], current_state, action, current_state.cost + 1)
                         break
-            time.sleep(0.3)
+            time.sleep(0.2)
         os.system('cls' if os.name == 'nt' else 'clear')  # Clear terminal
         print("List of actions:")
         print(", ".join(actions))
@@ -207,10 +207,10 @@ def main(layout_file, algorithm):
 
     actions, cost = search_algorithm.search(initial_state)
     Visualizer.visualize(search_algorithm, actions)
-    print("Cost:", cost)
-    # calculate the time in second
+    print("Total cost:", cost)
+
 
 if __name__ == "__main__":
-    layout_file = "pacman_layouts\\pacman_layouts\\bigMaze.lay"
-    algorithm = "A*" 
+    layout_file = "pacman_layouts\\pacman_layouts\\smallMaze.lay"
+    algorithm = "UCS" 
     main(layout_file, algorithm)
