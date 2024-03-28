@@ -38,10 +38,13 @@ class Maze:
         return [(i, j) for i in range(self.rows) for j in range(self.cols) if self.layout[i][j] == '.']
 
     def set_corners_as_food(self):
-        self.layout[1][1] = '.'  
-        self.layout[1][self.cols - 2] = '.'  
-        self.layout[self.rows - 2][1] = '.'  
-        self.layout[self.rows - 2][self.cols - 2] = '.'  
+        for i in (1, self.rows - 2):
+            for j in (1, self.cols - 2):
+                if self.layout[i][j] == '.':
+                    continue
+                if self.layout[i][j] == ' ':
+                    self.layout[i][j] = '.'
+        
 
     def get_initial_state(self):
         pacman_position = None
@@ -61,7 +64,8 @@ class Maze:
             for j in range(self.cols):
                 if (i, j) == pacman_position:
                     print('P', end='')
-                elif (i, j) in self.initial_food_points and (i, j) in food_positions and not ((i, j) in [(1, 1), (1, self.cols - 2), (self.rows - 2, 1), (self.rows - 2, self.cols - 2)]):
+                
+                elif ((i, j) in self.initial_food_points) and ((i, j) in food_positions) and (not ((i, j) in [(1, 1), (1, self.cols - 2), (self.rows - 2, 1), (self.rows - 2, self.cols - 2)])):
                     print('.', end='')
                 elif self.layout[i][j] == 'P' or self.layout[i][j] == '.':
                     print(' ', end='')
@@ -183,8 +187,9 @@ class Visualizer:
                     if search_algorithm.is_valid_position(new_x, new_y):
                         current_state = State((new_x, new_y), [point for point in current_state.food_points if point != (new_x, new_y)], current_state, action, current_state.cost + 1)
                         break
-            time.sleep(0.001)
+            time.sleep(0.5)
         os.system('cls' if os.name == 'nt' else 'clear')  # Clear terminal
+        print("List of actions:")
         print(", ".join(actions))
         print("Goal reached.")
 
@@ -208,6 +213,6 @@ def main(layout_file, algorithm):
     print("Total cost:", total_cost)
 
 if __name__ == "__main__":
-    layout_file = "D:\\1UniBachelor\\232\\AI\\BTL1\\pacman_layouts\\pacman_layouts\\smallMaze.lay"
+    layout_file = "pacman_layouts\\pacman_layouts\\smallMaze.lay"
     algorithm = "UCS" 
     main(layout_file, algorithm)
