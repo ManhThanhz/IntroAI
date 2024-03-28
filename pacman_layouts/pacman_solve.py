@@ -38,10 +38,13 @@ class Maze:
         return [(i, j) for i in range(self.rows) for j in range(self.cols) if self.layout[i][j] == '.']
 
     def set_corners_as_food(self):
-        self.layout[1][1] = '.'  
-        self.layout[1][self.cols - 2] = '.'  
-        self.layout[self.rows - 2][1] = '.'  
-        self.layout[self.rows - 2][self.cols - 2] = '.'  
+        for i in (1, self.rows - 2):
+            for j in (1, self.cols - 2):
+                if self.layout[i][j] == '.':
+                    continue
+                if self.layout[i][j] == ' ':
+                    self.layout[i][j] = '.'
+        
 
     def get_initial_state(self):
         pacman_position = None
@@ -61,7 +64,8 @@ class Maze:
             for j in range(self.cols):
                 if (i, j) == pacman_position:
                     print('P', end='')
-                elif (i, j) in self.initial_food_points and (i, j) in food_positions and not ((i, j) in [(1, 1), (1, self.cols - 2), (self.rows - 2, 1), (self.rows - 2, self.cols - 2)]):
+                
+                elif ((i, j) in self.initial_food_points) and ((i, j) in food_positions) and (not ((i, j) in [(1, 1), (1, self.cols - 2), (self.rows - 2, 1), (self.rows - 2, self.cols - 2)])):
                     print('.', end='')
                 elif self.layout[i][j] == 'P' or self.layout[i][j] == '.':
                     print(' ', end='')
@@ -137,32 +141,24 @@ class AStar(SearchAlgorithm):
         self.heuristic = heuristic
 
     def search(self, initial_state):
-        frontier = [(self.heuristic(initial_state), 0, initial_state)]
+        frontier = [(0, initial_state)]
         explored = set()
 
         while frontier:
-            _, cost, current_state = heapq.heappop(frontier)
+            cost, current_state = heapq.heappop(frontier)
             if self.is_goal_state(current_state):
                 return self.extract_actions(current_state), cost
 
             if hash(current_state) not in explored:
                 explored.add(hash(current_state))
                 for action, next_state, step_cost in self.get_successors(current_state):
-                    new_cost = cost + step_cost
-                    priority = new_cost + self.heuristic(next_state)
-                    heapq.heappush(frontier, (priority, new_cost, next_state))
+                    new_cost = current_state.cost + step_cost
+                    heuristic_cost = self.heuristic(next_state)
+                    heapq.heappush(frontier, (new_cost + heuristic_cost, next_state))
 
         return None, float('inf')
     
-    def manhattan_distance(point1, point2):
-        return abs(point1[0] - point2[0]) + abs(point1[1] - point2[1])
-
-    def nearest_food_heuristic(self, state):
-        pacman_position = state.pacman_position
-        remaining_food_points = state.food_points
-        if not remaining_food_points:
-            return 0  
-        return min(self.manhattan_distance(pacman_position, food_point) for food_point in remaining_food_points)
+    
 
 class Visualizer:
     def __init__(self, search_algorithm):
@@ -183,31 +179,38 @@ class Visualizer:
                     if search_algorithm.is_valid_position(new_x, new_y):
                         current_state = State((new_x, new_y), [point for point in current_state.food_points if point != (new_x, new_y)], current_state, action, current_state.cost + 1)
                         break
-            time.sleep(0.001)
+            time.sleep(0.3)
         os.system('cls' if os.name == 'nt' else 'clear')  # Clear terminal
+        print("List of actions:")
         print(", ".join(actions))
         print("Goal reached.")
 
+def manhattan_distance(p1, p2):
+    return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
 
+def nearest_food_heuristic(state):
+    pacman_position = state.pacman_position
+    if not state.food_points:
+        return 0
+    return min(manhattan_distance(pacman_position, food_point) for food_point in state.food_points)
 
 def main(layout_file, algorithm):
     maze = Maze(layout_file)
     initial_state = maze.get_initial_state()
 
-    if algorithm == 'UCS':
+    if algorithm == "UCS":
         search_algorithm = UCS(maze)
-    elif algorithm == 'A*':
-        heuristic = AStar.nearest_food_heuristic
-        search_algorithm = AStar(maze, heuristic)
+    elif algorithm == "A*":
+        search_algorithm = AStar(maze, nearest_food_heuristic)
     else:
-        print("Invalid algorithm specified.")
-        return
+        raise ValueError("Invalid algorithm.")
 
-    actions, total_cost = search_algorithm.search(initial_state)
+    actions, cost = search_algorithm.search(initial_state)
     Visualizer.visualize(search_algorithm, actions)
-    print("Total cost:", total_cost)
+    print("Cost:", cost)
+    # calculate the time in second
 
 if __name__ == "__main__":
-    layout_file = "D:\\1UniBachelor\\232\\AI\\BTL1\\pacman_layouts\\pacman_layouts\\smallMaze.lay"
-    algorithm = "UCS" 
+    layout_file = "pacman_layouts\\pacman_layouts\\bigMaze.lay"
+    algorithm = "A*" 
     main(layout_file, algorithm)
